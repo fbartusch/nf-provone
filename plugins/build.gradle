@@ -20,9 +20,9 @@ plugins {
 }
 
 ext.github_organization = 'nextflow-io'
-ext.github_username = project.findProperty('github_username') ?: 'pditommaso'
+ext.github_username = project.findProperty('github_username') ?: 'fbartusch'
 ext.github_access_token = project.findProperty('github_access_token') ?: System.getenv('GITHUB_TOKEN')
-ext.github_commit_email = project.findProperty('github_commit_email') ?: 'paolo.ditommaso@gmail.com'
+ext.github_commit_email = project.findProperty('github_commit_email') ?: 'felix.bartusch@uni-tuebingen.de'
 
 jar.enabled = false
 
@@ -159,7 +159,7 @@ subprojects {
  * Upload all plugins to the corresponding GitHub repos
  */
 task upload(dependsOn: [subprojects.uploadPlugin]) { }
-
+ 
 /*
  * Copies the plugins required dependencies in the corresponding lib directory
  */

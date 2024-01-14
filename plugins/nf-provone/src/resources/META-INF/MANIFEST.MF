@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Plugin-Id: nf-provone
+Plugin-Version: 0.1.0
+Plugin-Class: nextflow.provone.ProvonePlugin
+Plugin-Provider: nextflow
+Plugin-Requires: >=22.10.0
