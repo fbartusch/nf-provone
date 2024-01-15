@@ -1,7 +1,13 @@
 import nextflow.cli.PluginAbstractExec
 import nextflow.plugin.BasePlugin
+import org.pf4j.PluginWrapper
 
-class ProvonePlugin extends BasePlugin implements PluginAbstractExec {
+class ProvOnePlugin extends BasePlugin implements PluginAbstractExec {
+
+    ProvOnePlugin(PluginWrapper wrapper) {
+        super(wrapper)
+    }
+
     @Override
     List<String> getCommands() {
         [ 'fmri' ]

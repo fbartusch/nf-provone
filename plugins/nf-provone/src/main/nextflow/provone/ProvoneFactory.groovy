@@ -31,7 +31,7 @@ class ProvoneFactory implements TraceObserverFactory {
     @Override
     Collection<TraceObserver> create(Session session) {
         final result = new ArrayList()
-        result.add( new ProvoneObserver() )
+        result.add( new ProvOneObserver() )
         return result
     }
 }

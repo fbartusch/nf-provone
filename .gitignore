@@ -7,3 +7,6 @@
 build
 work
 out
+
+# Ignore Nextflow output directories
+*/work/

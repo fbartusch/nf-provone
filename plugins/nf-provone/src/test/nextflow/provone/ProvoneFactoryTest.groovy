@@ -16,7 +16,9 @@
 
 package nextflow.provone
 
+import java.nio.file.Path
 import nextflow.Session
+import nextflow.script.ScriptRunner
 import spock.lang.Specification
 
 /**
@@ -30,7 +32,21 @@ class ProvoneFactoryTest extends Specification {
         def result = new ProvoneFactory().create(Mock(Session))
         then:
         result.size()==1
-        result[0] instanceof ProvoneObserver
+        result[0] instanceof ProvOneObserver
+    }
+
+    def 'should run script' () {
+        given:
+            ScriptRunner runner  = new ScriptRunner();
+            //System.out.println("Working Directory = " + System.getProperty("user.dir"));
+            Path scriptPath = Path.of("./src/test/main.nf");
+            runner.setScript(scriptPath);
+        when:
+            runner.execute()
+            def result = new ProvoneFactory().create(Mock(Session))
+        then:
+            result.size()==1
+            result[0] instanceof ProvOneObserver
     }
 
 }

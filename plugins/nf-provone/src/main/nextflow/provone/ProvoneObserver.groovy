@@ -18,9 +18,14 @@ package nextflow.provone
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import groovy.transform.CompileStatic
+import nextflow.Session
+import nextflow.processor.TaskHandler
+import nextflow.processor.TaskProcessor
 
 import nextflow.Session
 import nextflow.trace.TraceObserver
+import nextflow.trace.TraceRecord
 
 import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
@@ -28,23 +33,30 @@ import org.openprovenance.prov.interop.GenericInteropFramework
 import org.provtools.provone.model.ProvOneNamespace
 import org.provtools.provone.vanilla.ProvOneFactory
 
+import java.nio.file.Path
+
 /**
- * Example workflow events observer
+ * Workflow events observer that creates
+ * provenance metadata during execution
  *
- * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ * @author Felix Bartusch <felix.bartusch@uni-tuebingen.de>
  */
 @Slf4j
 @CompileStatic
-class ProvoneObserver implements TraceObserver {
+class ProvOneObserver implements TraceObserver {
 
     ProvOneFactory pFactory = new ProvOneFactory();
     ProvOneNamespace ns = new ProvOneNamespace();
     Document document = pFactory.newDocument()
 
+    /**
+     * The is method is invoked when the flow is going to start
+     */
     @Override
     void onFlowCreate(Session session) {
-        log.info "Pipeline is starting! 🚀"
+        log.info "onFlowCreate called."
 
+        log.info "\tSet namespaces ..."
         // Configure namespaces used in the document
         this.ns.addKnownNamespaces();
         this.ns.register("exa", "http://example.com/");
@@ -53,18 +65,157 @@ class ProvoneObserver implements TraceObserver {
         this.ns.register("foaf", "http://xmlns.com/foaf/0.1/");
         this.ns.register("scoro", "http://purl.org/spar/scoro/");
 
-        //// Create the document and set the namespaces
+        // Create the document and set the namespaces
         document.setNamespace(this.ns);
     }
 
+    /**
+     * The is method is invoked when the flow is going to start
+     */
+    @Override
+    void onFlowBegin() {
+        log.info "onFlowBegin called"
+    }
+
+    /**
+     * This method is invoked when the flow is going to complete
+     */
     @Override
     void onFlowComplete() {
-        log.info "Pipeline complete! 👋"
-        log.info "Serialize provenance document ..."
+        log.info "onFlowComplete called"
+        log.info "\tSerialize provenance document ..."
 
         String filename = "provone_provenance.jsonld";
         InteropFramework intF = new GenericInteropFramework(this.pFactory);
 
         intF.writeDocument(filename, document);     
+    }
+
+    /*
+     * Invoked when the process is created.
+     */
+    @Override
+    void onProcessCreate( TaskProcessor process ){
+        log.info "onProcessCreate called"
+    }
+
+    /*
+     * Invoked when all tak have been executed and process ends.
+     */
+    @Override
+    void onProcessTerminate( TaskProcessor process ){
+        log.info "onProcessTerminate called"
+    }
+
+    /**
+     * This method when a new task is created and submitted in the nextflow
+     * internal queue of pending task to be scheduled to the underlying
+     * execution backend
+     *
+     * @param handler
+     * @param trace
+     */
+    @Override
+    void onProcessPending(TaskHandler handler, TraceRecord trace){
+        log.info "onProcessPending called"
+    }
+
+    /**
+     * This method is invoked before a process run is going to be submitted
+     *
+     * @param handler
+     *      The {@link TaskHandler} instance for the current task.
+     * @param trace
+     *      The associated {@link TraceRecord} for the current task.
+     */
+    @Override
+    void onProcessSubmit(TaskHandler handler, TraceRecord trace){
+        log.info "onProcessSubmit called"
+    }
+
+    /**
+     * This method is invoked when a process run is going to start
+     *
+     * @param handler
+     *      The {@link TaskHandler} instance for the current task.
+     * @param trace
+     *      The associated {@link TraceRecord} for the current task.
+     */
+    @Override
+    void onProcessStart(TaskHandler handler, TraceRecord trace){
+        log.info "onProcessStart called"
+    }
+
+    /**
+     * This method is invoked when a process run completes
+     *
+     * @param handler
+     *      The {@link TaskHandler} instance for the current task.
+     * @param trace
+     *      The associated {@link TraceRecord} for the current task.
+     */
+    @Override
+    void onProcessComplete(TaskHandler handler, TraceRecord trace){
+        log.info "onProcessComplete called"
+    }
+
+    /**
+     * method invoked when a task execution is skipped because the result is cached (already computed)
+     * or stored (due to the usage of `storeDir` directive)
+     *
+     * @param handler
+     *      The {@link TaskHandler} instance for the current task
+     * @param trace
+     *      The trace record for the cached trace. When this event is invoked for a store task
+     *      the {@code trace} record is expected to be {@code null}
+     */
+    @Override
+    void onProcessCached(TaskHandler handler, TraceRecord trace){
+        log.info "onProcessCached called"
+    }
+
+    /**
+     * @return {@code true} whenever this observer requires to collect task execution metrics
+     */
+    @Override
+    boolean enableMetrics(){ false }
+
+    /**
+     * Method that is invoked, when a workflow fails.
+     *
+     * @param handler
+     *      The {@link TaskHandler} instance for the current task.
+     * @param trace
+     *      The associated {@link TraceRecord} for the current task.
+     */
+    @Override
+    void onFlowError(TaskHandler handler, TraceRecord trace){
+        log.info "onFlowError called"
+    }
+
+    /**
+     * Method that is invoke when an output file is published
+     * into a `publishDir` folder.
+     *
+     * @param destination
+     *      The destination path at `publishDir` folder.
+     */
+    @Override
+    void onFilePublish(Path destination){
+        log.info "onFilePublish called"
+    }
+
+    /**
+     * Method that is invoke when an output file is published
+     * into a `publishDir` folder.
+     *
+     * @param destination
+     *      The destination path at `publishDir` folder.
+     * @param source
+     *      The source path at `workDir` folder.
+     */
+    @Override
+    void onFilePublish(Path destination, Path source){
+        onFilePublish(destination)
     }
 }
