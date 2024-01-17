@@ -51,7 +51,7 @@ class ProvoneExtension extends PluginExtensionPoint {
     @Override
     protected void init(Session session) {
         this.session = session
-        this.config = new ProvoneConfig(session.config.navigate('hello') as Map)
+        this.config = new ProvoneConfig(session.config.navigate('provone') as Map)
     }
 
     /*

@@ -67,6 +67,8 @@ class ProvOneObserver implements TraceObserver {
 
         // Create the document and set the namespaces
         document.setNamespace(this.ns);
+        log.info(session.config.toString());
+        log.info(session.dump());
     }
 
     /**
@@ -97,6 +99,7 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessCreate( TaskProcessor process ){
         log.info "onProcessCreate called"
+        log.info(process.dump());
     }
 
     /*
@@ -105,6 +108,7 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessTerminate( TaskProcessor process ){
         log.info "onProcessTerminate called"
+        log.info(process.dump());
     }
 
     /**
@@ -118,6 +122,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessPending(TaskHandler handler, TraceRecord trace){
         log.info "onProcessPending called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -131,6 +137,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessSubmit(TaskHandler handler, TraceRecord trace){
         log.info "onProcessSubmit called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -144,6 +152,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessStart(TaskHandler handler, TraceRecord trace){
         log.info "onProcessStart called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -157,6 +167,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessComplete(TaskHandler handler, TraceRecord trace){
         log.info "onProcessComplete called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -172,6 +184,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessCached(TaskHandler handler, TraceRecord trace){
         log.info "onProcessCached called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -191,6 +205,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onFlowError(TaskHandler handler, TraceRecord trace){
         log.info "onFlowError called"
+        log.info(handler.dump());
+        log.info(trace.dump());
     }
 
     /**
@@ -203,6 +219,7 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onFilePublish(Path destination){
         log.info "onFilePublish called"
+        log.info(Path.dump());
     }
 
     /**
