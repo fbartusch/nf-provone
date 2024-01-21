@@ -48,7 +48,7 @@ class ProvOneFactoryTest extends Specification {
             Path scriptPath = Path.of("./src/testResources/main.nf");
             runner.setScript(scriptPath);
         when:
-            runner.execute()
+            def result = runner.execute()
         then:
             1==1
             //result.size()==1
