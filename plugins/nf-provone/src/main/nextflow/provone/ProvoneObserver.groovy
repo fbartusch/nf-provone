@@ -16,10 +16,8 @@
 
 package nextflow.provone
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import groovy.transform.CompileStatic
-import nextflow.Session
 import nextflow.config.ConfigMap
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskProcessor
@@ -27,11 +25,14 @@ import nextflow.processor.TaskProcessor
 import nextflow.Session
 import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
-
+import org.openprovenance.prov.model.Attribute
 import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
 import org.openprovenance.prov.interop.GenericInteropFramework
+import org.openprovenance.prov.model.QualifiedName
 import org.provtools.provone.model.ProvOneNamespace
+import org.provtools.provone.vanilla.Controller
+import org.provtools.provone.vanilla.Execution
 import org.provtools.provone.vanilla.ProvOneFactory
 
 import java.nio.file.Path
@@ -48,12 +49,16 @@ import org.provtools.provone.vanilla.Workflow
 @CompileStatic
 class ProvOneObserver implements TraceObserver {
 
+    Session sessionSave = null
+
+    //TODO Namespaces are missing in jsonld document
     ProvOneFactory pFactory = new ProvOneFactory();
     ProvOneNamespace ns = new ProvOneNamespace();
     Document document = pFactory.newDocument()
 
     // PROV and ProvONE elements
-    List<Workflow> workflows = new ArrayList<Workflow>()
+    Workflow workflow = null
+    Execution workflowExecution = null
     User user = null
 
     /**
@@ -64,6 +69,8 @@ class ProvOneObserver implements TraceObserver {
         log.info "onFlowCreate called."
         log.info(session.config.toString());
         log.info(session.dump());
+
+        sessionSave = session
 
         log.info "\tSet namespaces ..."
         // Configure namespaces used in the document
@@ -100,45 +107,57 @@ class ProvOneObserver implements TraceObserver {
             log.info("User INI file does not exist: " + userINIPath)
         }
 
-        // Create Workflow ProvOne Workflow element
-        session.workflowMetadata.getScriptId()  // 6c520db86010b45d517f2e7dad93eb34
-        session.workflowMetadata.getScriptFile() // /home/felix/github/nf-provone/plugins/nf-provone/src/testResources/main.nf
-        session.workflowMetadata.getRepository() // null
-        session.workflowMetadata.getCommitId() // null
-        session.workflowMetadata.getRevision() // null
+        // Create a new ProvOne workflow object and add it to the document
+        workflow = pFactory.newWorkflow(session.workflowMetadata.getScriptId(),
+                    session.workflowMetadata.getScriptName(),
+                    session.workflowMetadata.getScriptFile().toString(),
+                    session.workflowMetadata.getRepository(),
+                    session.workflowMetadata.getCommitId(),
+                    session.workflowMetadata.getRevision());
+        document.getStatementOrBundle().add(workflow)
 
         // Execution metadata
-        session.workflowMetadata.getSessionId() // c1985ae6-378c-472d-855b-53d4a601f170  (als QN?)
-        session.workflowMetadata.getRunName() // cheesy_ritchie
-        session.workflowMetadata.getStart() // 2024-01-18T06:08:00.950323795+01:00
-        // workdir, basedir, launchdir etc
-        session.workflowMetadata.getProjectDir() // /home/felix/github/nf-provone/plugins/nf-provone/src/testResources
-        session.workflowMetadata.getLaunchDir() // /home/felix/github/nf-provone/plugins/nf-provone
-        session.workflowMetadata.getWorkDir() // /home/felix/github/nf-provone/plugins/nf-provone/work
+        QualifiedName exeQN = pFactory.newQualifiedName("https://example.com/", session.workflowMetadata.getSessionId().toString(), "ex");
+        Collection<Attribute> wfAttrs = new LinkedList<>();
+        // Add projectDir as attribute
+        wfAttrs.add(pFactory.newAttribute("https://example.com/", "projectDir", "ex",
+                session.workflowMetadata.getProjectDir(), pFactory.getName().XSD_STRING));
+        // Add launchDir as attribute
+        wfAttrs.add(pFactory.newAttribute("https://example.com/", "launchDir", "ex",
+                session.workflowMetadata.getLaunchDir(), pFactory.getName().XSD_STRING));
+        // Add workDir as attribute
+        wfAttrs.add(pFactory.newAttribute("https://example.com/", "workDir", "ex",
+                session.workflowMetadata.getWorkDir(), pFactory.getName().XSD_STRING));
+        // Add label
+        wfAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
+                pFactory.newInternationalizedString(session.workflowMetadata.getRunName()),
+                pFactory.getName().XSD_STRING));
 
-        session.workflowMetadata.getContainer() // nextflow/rnaseq-nf
-        session.workflowMetadata.getContainerEngine() // docker
+        workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, wfAttrs);
+        document.getStatementOrBundle().add(workflowExecution)
 
-        // Create Controller Provone Element
-        session.workflowMetadata.getNextflow().getVersion() //  23.04.0
-        session.workflowMetadata.getNextflow().getBuild() //  5857
-        session.workflowMetadata.getNextflow().getTimestamp() //  01-04-2023 21:09 UTC
+        // TODO Create QualifiedAssociation between Execution and Workflow
+
+        // TODO Create Controller Provone Element
+        QualifiedName controllerQN = pFactory.newQualifiedName("https://example.com/", "Nextflow", "ex");
+        Collection<Attribute> controllerAttrs = new LinkedList<>();
+
+
+        Controller wfController = pFactory.newController(controllerQN,
+                "Nextflow",
+                session.workflowMetadata.getNextflow().getVersion().toString(),
+                "https://www.nextflow.io/",
+                "https://github.com/nextflow-io/nextflow/blob/master/CITATION.cff",
+                null)
+        document.getStatementOrBundle().add(wfController)
+        // TODO add information about Nextflow build
+        //session.workflowMetadata.getNextflow().getBuild() //  5857
+        //session.workflowMetadata.getNextflow().getTimestamp() //  01-04-2023 21:09 UTC
         // was macht session.workflowMetadata.nextflow.preview und session.nextflow.enable?
         // was sagt session.workflowMetadata.profile (standard) aus?
 
-        // Create user
-        session.workflowMetadata.getUserName(); // felix
-
-
-        // How to define the QN of the workflow?
-        //String wfQN =
-
-        //Workflow wf = pFactory.newWorkflow(qn("fmri-workflow"), "fMRI workflow", null, null,
-        //        "https://github.com/fbartusch/fMRI_snakemake",
-        //        null,
-        //        "Implemenation of fMRI workflow used in the Provenance Challenges with Snakemake.");
-
-
+        //session.workflowMetadata.getContainer() // nextflow/rnaseq-nf
+        //session.workflowMetadata.getContainerEngine() // docker
     }
 
     /**
@@ -156,6 +175,9 @@ class ProvOneObserver implements TraceObserver {
     void onFlowComplete() {
         log.info "onFlowComplete called"
         log.info "\tSerialize provenance document ..."
+
+        // Set Workflow endTime
+        workflowExecution.setEndTime(sessionSave.getWorkflowMetadata().getComplete())
 
         String filename = "provone_provenance.jsonld";
         InteropFramework intF = new GenericInteropFramework(this.pFactory);
