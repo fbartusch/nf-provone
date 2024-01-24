@@ -23,6 +23,9 @@ import nextflow.processor.TaskHandler
 import nextflow.processor.TaskProcessor
 
 import nextflow.Session
+import nextflow.processor.TaskRun
+import nextflow.script.BodyDef
+import nextflow.script.ProcessConfig
 import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
 import org.openprovenance.prov.model.Attribute
@@ -30,6 +33,7 @@ import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
 import org.openprovenance.prov.interop.GenericInteropFramework
 import org.openprovenance.prov.model.QualifiedName
+import org.openprovenance.prov.model.WasAssociatedWith
 import org.provtools.provone.model.ProvOneNamespace
 import org.provtools.provone.vanilla.Controller
 import org.provtools.provone.vanilla.Execution
@@ -73,6 +77,7 @@ class ProvOneObserver implements TraceObserver {
         sessionSave = session
 
         log.info "\tSet namespaces ..."
+
         // Configure namespaces used in the document
         this.ns.addKnownNamespaces();
         this.ns.register("exa", "http://example.com/");
@@ -80,6 +85,7 @@ class ProvOneObserver implements TraceObserver {
         this.ns.register("schema", "https://schema.org/");
         this.ns.register("foaf", "http://xmlns.com/foaf/0.1/");
         this.ns.register("scoro", "http://purl.org/spar/scoro/");
+        document.setNamespace(ns)
 
         // Read user information file
         String userINIPath = null
@@ -136,25 +142,27 @@ class ProvOneObserver implements TraceObserver {
         workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, wfAttrs);
         document.getStatementOrBundle().add(workflowExecution)
 
-        // TODO Create QualifiedAssociation between Execution and Workflow
+        // Associate user with workflow execution and plan (e.g. the Nextflow script)
+        QualifiedName userWFAssocQN = pFactory.newQualifiedName("https://example.com/",
+                user.getId().toString() + "_" + workflow.getId().toString(), "ex");
+        WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(null, workflowExecution.getId(), user.getId(), workflow.getId(), null);
+        document.getStatementOrBundle().add(userWFAssoc)
 
-        // TODO Create Controller Provone Element
+        // Create Controller Provone Element
         QualifiedName controllerQN = pFactory.newQualifiedName("https://example.com/", "Nextflow", "ex");
         Collection<Attribute> controllerAttrs = new LinkedList<>();
-
-
-        Controller wfController = pFactory.newController(controllerQN,
-                "Nextflow",
+        controllerAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL, pFactory.newInternationalizedString("Nextflow"),
+                pFactory.getName().XSD_STRING));
+        // Add Build and timestamp as attribute
+        controllerAttrs.add(pFactory.newAttribute("https://example.com/", "build", "ex",
+                session.workflowMetadata.getNextflow().getBuild().toString(), pFactory.getName().XSD_STRING));
+        controllerAttrs.add(pFactory.newAttribute("https://example.com/", "timestamp", "ex",
+                session.workflowMetadata.getNextflow().getTimestamp(), pFactory.getName().XSD_STRING));
+        controllerAttrs.add(pFactory.newAttribute("https://schema.org/", "softwareVersion", "schema",
                 session.workflowMetadata.getNextflow().getVersion().toString(),
-                "https://www.nextflow.io/",
-                "https://github.com/nextflow-io/nextflow/blob/master/CITATION.cff",
-                null)
+                pFactory.newQualifiedName("https://schema.org/", "Text", "schema")));
+        Controller wfController = pFactory.newController(controllerQN, controllerAttrs)
         document.getStatementOrBundle().add(wfController)
-        // TODO add information about Nextflow build
-        //session.workflowMetadata.getNextflow().getBuild() //  5857
-        //session.workflowMetadata.getNextflow().getTimestamp() //  01-04-2023 21:09 UTC
-        // was macht session.workflowMetadata.nextflow.preview und session.nextflow.enable?
-        // was sagt session.workflowMetadata.profile (standard) aus?
 
         //session.workflowMetadata.getContainer() // nextflow/rnaseq-nf
         //session.workflowMetadata.getContainerEngine() // docker
@@ -192,6 +200,11 @@ class ProvOneObserver implements TraceObserver {
     void onProcessCreate( TaskProcessor process ){
         log.info "onProcessCreate called"
         log.info(process.dump());
+
+        // Process has a name (e.g. "INDEX")
+        process.getName()
+        process.getId()
+
     }
 
     /*
@@ -201,6 +214,14 @@ class ProvOneObserver implements TraceObserver {
     void onProcessTerminate( TaskProcessor process ){
         log.info "onProcessTerminate called"
         log.info(process.dump());
+
+        // Process Environment has zero size ...
+        Map<String, String> processEnvironment = process.getProcessEnvironment()
+
+        ProcessConfig processConfig = process.getConfig()
+        BodyDef taskBody = process.getTaskBody()
+
+        process.getId()
     }
 
     /**
@@ -216,6 +237,18 @@ class ProvOneObserver implements TraceObserver {
         log.info "onProcessPending called"
         log.info(handler.dump());
         log.info(trace.dump());
+
+        // handler has
+        // - an hash
+        // - inputs (parameters and their values)
+        // - outputs (not yet filled?)
+        // - script (with all params and inputs resolved)
+        // - context
+        // - startTimeMillis = 0
+        // - completeTimeMillis = 0
+        TaskRun task = handler.getTask()
+
+        // trace.store has a nice HashMap with interesting values (start, status, task-di, container, cpus, memory, disk, time, env, ...)
     }
 
     /**
@@ -261,6 +294,10 @@ class ProvOneObserver implements TraceObserver {
         log.info "onProcessComplete called"
         log.info(handler.dump());
         log.info(trace.dump());
+
+
+        // TODO implement next things here, as most information needed is provided by trace and handler
+        // HAndler has inputs/outputs, config, context,
     }
 
     /**
