@@ -18,6 +18,9 @@ package nextflow.provone
 
 import groovy.util.logging.Slf4j
 import groovy.transform.CompileStatic
+import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import nextflow.config.ConfigMap
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskProcessor
@@ -55,7 +58,6 @@ class ProvOneObserver implements TraceObserver {
 
     Session sessionSave = null
 
-    //TODO Namespaces are missing in jsonld document
     ProvOneFactory pFactory = new ProvOneFactory();
     ProvOneNamespace ns = new ProvOneNamespace();
     Document document = pFactory.newDocument()
@@ -237,18 +239,6 @@ class ProvOneObserver implements TraceObserver {
         log.info "onProcessPending called"
         log.info(handler.dump());
         log.info(trace.dump());
-
-        // handler has
-        // - an hash
-        // - inputs (parameters and their values)
-        // - outputs (not yet filled?)
-        // - script (with all params and inputs resolved)
-        // - context
-        // - startTimeMillis = 0
-        // - completeTimeMillis = 0
-        TaskRun task = handler.getTask()
-
-        // trace.store has a nice HashMap with interesting values (start, status, task-di, container, cpus, memory, disk, time, env, ...)
     }
 
     /**
@@ -298,6 +288,27 @@ class ProvOneObserver implements TraceObserver {
 
         // TODO implement next things here, as most information needed is provided by trace and handler
         // HAndler has inputs/outputs, config, context,
+        QualifiedName exeQN = pFactory.newQualifiedName("https://example.com/", handler.getTask().getHash().toString(), "ex")
+        OffsetDateTime startTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getStartTimeMillis()), ZoneId.systemDefault());
+        OffsetDateTime endTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getCompleteTimeMillis()), ZoneId.systemDefault());
+        Execution processExe = pFactory.newExecution(exeQN, startTime, endTime, handler.getTask().getProcessor().getName())
+
+
+        //TODO add more information
+
+        // handler has
+        // - an hash
+        // - inputs (parameters and their values)
+        // - outputs (not yet filled?)
+        // - script (with all params and inputs resolved)
+        // - context
+        // - startTimeMillis = 0
+        // - completeTimeMillis = 0
+        // trace.store has a nice HashMap with interesting values (start, status, task-id, container, cpus, memory, disk, time, env, ...)
+
+        //TODO wasPartOf workflow execution / wasInformedBy workflow execution
+
+        document.getStatementOrBundle().add(processExe)
     }
 
     /**
