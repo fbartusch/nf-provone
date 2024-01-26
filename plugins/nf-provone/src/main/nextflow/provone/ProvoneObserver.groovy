@@ -37,9 +37,12 @@ import org.openprovenance.prov.interop.InteropFramework
 import org.openprovenance.prov.interop.GenericInteropFramework
 import org.openprovenance.prov.model.QualifiedName
 import org.openprovenance.prov.model.WasAssociatedWith
+import org.openprovenance.prov.model.WasInformedBy
 import org.provtools.provone.model.ProvOneNamespace
+import org.provtools.provone.model.WasPartOf
 import org.provtools.provone.vanilla.Controller
 import org.provtools.provone.vanilla.Execution
+import org.provtools.provone.vanilla.Program
 import org.provtools.provone.vanilla.ProvOneFactory
 
 import java.nio.file.Path
@@ -147,7 +150,7 @@ class ProvOneObserver implements TraceObserver {
         // Associate user with workflow execution and plan (e.g. the Nextflow script)
         QualifiedName userWFAssocQN = pFactory.newQualifiedName("https://example.com/",
                 user.getId().toString() + "_" + workflow.getId().toString(), "ex");
-        WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(null, workflowExecution.getId(), user.getId(), workflow.getId(), null);
+        WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(userWFAssocQN, workflowExecution.getId(), user.getId(), workflow.getId(), null);
         document.getStatementOrBundle().add(userWFAssoc)
 
         // Create Controller Provone Element
@@ -165,9 +168,6 @@ class ProvOneObserver implements TraceObserver {
                 pFactory.newQualifiedName("https://schema.org/", "Text", "schema")));
         Controller wfController = pFactory.newController(controllerQN, controllerAttrs)
         document.getStatementOrBundle().add(wfController)
-
-        //session.workflowMetadata.getContainer() // nextflow/rnaseq-nf
-        //session.workflowMetadata.getContainerEngine() // docker
     }
 
     /**
@@ -285,30 +285,44 @@ class ProvOneObserver implements TraceObserver {
         log.info(handler.dump());
         log.info(trace.dump());
 
-
-        // TODO implement next things here, as most information needed is provided by trace and handler
-        // HAndler has inputs/outputs, config, context,
+        // Execution
         QualifiedName exeQN = pFactory.newQualifiedName("https://example.com/", handler.getTask().getHash().toString(), "ex")
         OffsetDateTime startTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getStartTimeMillis()), ZoneId.systemDefault());
         OffsetDateTime endTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getCompleteTimeMillis()), ZoneId.systemDefault());
         Execution processExe = pFactory.newExecution(exeQN, startTime, endTime, handler.getTask().getProcessor().getName())
-
-
-        //TODO add more information
-
-        // handler has
-        // - an hash
-        // - inputs (parameters and their values)
-        // - outputs (not yet filled?)
-        // - script (with all params and inputs resolved)
-        // - context
-        // - startTimeMillis = 0
-        // - completeTimeMillis = 0
-        // trace.store has a nice HashMap with interesting values (start, status, task-id, container, cpus, memory, disk, time, env, ...)
-
-        //TODO wasPartOf workflow execution / wasInformedBy workflow execution
-
         document.getStatementOrBundle().add(processExe)
+
+        // Program
+        // The qualified name will be computed from the executed script. There is no hash for the script itself.
+        QualifiedName progQN = pFactory.newQualifiedName("https://example.com/", handler.getTask().getScript().hashCode().toString(), "ex")
+        // Attributes
+        Collection<Attribute> progAttrs = new LinkedList<>();
+        progAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
+                pFactory.newInternationalizedString(handler.getTask().getProcessor().getName()),
+                pFactory.getName().XSD_STRING));
+        // Add script as attribute
+        progAttrs.add(pFactory.newAttribute("https://example.com/", "script", "ex",
+                handler.getTask().getScript().toString().trim(), pFactory.getName().XSD_STRING));
+        Program processProg = pFactory.newProgram(progQN, progAttrs)
+        document.getStatementOrBundle().add(processProg)
+
+        // Associate Execution with the Program and User
+        QualifiedName userProcAssocQN = pFactory.newQualifiedName("https://example.com/",
+                user.getId().toString() + "_" + processExe.getId().toString(), "ex");
+        WasAssociatedWith userProcessAssoc = pFactory.newWasAssociatedWith(userProcAssocQN, processExe.getId(), user.getId(), processProg.getId(), null);
+        document.getStatementOrBundle().add(userProcessAssoc)
+
+        // Process execution is part of workflow execution
+        WasPartOf exePartOfWF = pFactory.newWasPartOf(exeQN, workflowExecution.getId())
+        document.getStatementOrBundle().add(exePartOfWF)
+
+        // Program is part of workflow
+        WasPartOf progPartOfWF = pFactory.newWasPartOf(progQN, workflow.getId())
+        document.getStatementOrBundle().add(progPartOfWF)
+
+        // TODO wasInformedBy
+        // prov:wasInformedBy is adopted in ProvONE to state that an Execution communicates with another
+        // Execution through an output-input relation, and thereby triggers its execution.
     }
 
     /**
