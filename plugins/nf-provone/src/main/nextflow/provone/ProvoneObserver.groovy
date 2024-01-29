@@ -18,6 +18,7 @@ package nextflow.provone
 
 import groovy.util.logging.Slf4j
 import groovy.transform.CompileStatic
+import java.security.MessageDigest
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -29,6 +30,10 @@ import nextflow.Session
 import nextflow.processor.TaskRun
 import nextflow.script.BodyDef
 import nextflow.script.ProcessConfig
+import nextflow.script.params.FileInParam
+import nextflow.script.params.FileOutParam
+import nextflow.script.params.InParam
+import nextflow.script.params.OutParam
 import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
 import org.openprovenance.prov.model.Attribute
@@ -41,6 +46,7 @@ import org.openprovenance.prov.model.WasInformedBy
 import org.provtools.provone.model.ProvOneNamespace
 import org.provtools.provone.model.WasPartOf
 import org.provtools.provone.vanilla.Controller
+import org.provtools.provone.vanilla.Data
 import org.provtools.provone.vanilla.Execution
 import org.provtools.provone.vanilla.Program
 import org.provtools.provone.vanilla.ProvOneFactory
@@ -320,6 +326,49 @@ class ProvOneObserver implements TraceObserver {
         WasPartOf progPartOfWF = pFactory.newWasPartOf(progQN, workflow.getId())
         document.getStatementOrBundle().add(progPartOfWF)
 
+        // Input file(s) of the Execution
+        Map<FileInParam, Object> inputFiles = handler.getTask().getInputsByType(FileInParam.class)
+        for (entry in inputFiles) {
+
+            // TODO entry.value could be a FileHolder:
+            // FileHolder(sourceObj:/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/transcriptome.fa, storePath:/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/transcriptome.fa, stageName:transcriptome.fa)
+            File inputFile = new File(entry.value.toString())
+
+            if (inputFile.isDirectory()) {
+                // Iterate over the directory content
+                File[] dirListing = inputFile.listFiles()
+                if (dirListing != null) {
+                    for (File child : dirListing) {
+                        document.getStatementOrBundle().add(createData(child))
+                    }
+                }
+            }
+
+            if (inputFile.isFile()) {
+                document.getStatementOrBundle().add(createData(inputFile))
+            }
+        }
+
+        // Output file(s) of the Execution
+        Map<FileOutParam, Object> outputFiles = handler.getTask().getOutputsByType(FileOutParam.class)
+        for (entry in outputFiles) {
+            File outputFile = new File(entry.value.toString())
+
+            if (outputFile.isDirectory()) {
+                // Iterate over the directory content
+                File[] dirListing = outputFile.listFiles()
+                if (dirListing != null) {
+                    for (File child : dirListing) {
+                        document.getStatementOrBundle().add(createData(child))
+                    }
+                }
+            }
+
+            if (outputFile.isFile()) {
+                document.getStatementOrBundle().add(createData(outputFile))
+            }
+        }
+
         // TODO wasInformedBy
         // prov:wasInformedBy is adopted in ProvONE to state that an Execution communicates with another
         // Execution through an output-input relation, and thereby triggers its execution.
@@ -388,5 +437,46 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onFilePublish(Path destination, Path source){
         onFilePublish(destination)
+    }
+
+    static getSha1sum(File file) {
+        return getChecksum(file, "SHA1")
+    }
+
+    static getMD5sum(File file) {
+        return getChecksum(file, "MD5")
+    }
+
+    static getChecksum(File file, String type) {
+        def digest = MessageDigest.getInstance(type)
+        def inputstream = file.newInputStream()
+        def buffer = new byte[16384]
+        def int len
+
+        while((len=inputstream.read(buffer)) > 0) {
+            digest.update(buffer, 0, len)
+        }
+        def sha1sum = digest.digest()
+
+        def result = ""
+        for(byte b : sha1sum) {
+            result += toHex(b)
+        }
+        return result
+    }
+
+    private static String hexChr(int b) {
+        return Integer.toHexString(b & 0xF)
+    }
+
+    private static String toHex(int b) {
+        return hexChr((b & 0xF0) >> 4) + hexChr(b & 0x0F)
+    }
+
+    private Data createData(File file)  {
+        // Compute hash sum of the file
+        String checksum = getSha1sum(file)
+        QualifiedName outputQN = pFactory.newQualifiedName("https://example.com/", checksum, "ex");
+        return pFactory.newData(outputQN, file.getName())
     }
 }
