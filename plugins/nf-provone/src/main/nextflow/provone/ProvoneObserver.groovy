@@ -23,6 +23,7 @@ import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import nextflow.config.ConfigMap
+import nextflow.file.FileHolder
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskProcessor
 
@@ -36,6 +37,7 @@ import nextflow.script.params.InParam
 import nextflow.script.params.OutParam
 import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
+import nextflow.util.ArrayBag
 import org.openprovenance.prov.model.Attribute
 import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
@@ -329,23 +331,45 @@ class ProvOneObserver implements TraceObserver {
         // Input file(s) of the Execution
         Map<FileInParam, Object> inputFiles = handler.getTask().getInputsByType(FileInParam.class)
         for (entry in inputFiles) {
+            File inputPath = null
 
-            // TODO entry.value could be a FileHolder:
-            // FileHolder(sourceObj:/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/transcriptome.fa, storePath:/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/transcriptome.fa, stageName:transcriptome.fa)
-            File inputFile = new File(entry.value.toString())
+            // entry.value could be an ArrayBag containing a FileHolder object
+            if (entry.value.getClass() == ArrayBag.class) {
+                ArrayBag arrayBag = (ArrayBag) entry.value
 
-            if (inputFile.isDirectory()) {
-                // Iterate over the directory content
-                File[] dirListing = inputFile.listFiles()
-                if (dirListing != null) {
-                    for (File child : dirListing) {
-                        document.getStatementOrBundle().add(createData(child))
-                    }
+                // Value stored in the array bag could be a FileHolder object
+                if (arrayBag.get(0).class == FileHolder.class) {
+                    FileHolder fileHolder = (FileHolder) arrayBag.get(0)
+                    inputPath = new File(fileHolder.getSourceObj().toString())
                 }
             }
 
-            if (inputFile.isFile()) {
-                document.getStatementOrBundle().add(createData(inputFile))
+            if (entry.value.getClass() == FileInParam.class) {
+                inputPath = new File(entry.value.toString())
+            }
+
+            // Add the file to the document
+            if (inputPath.isFile()) {
+                Data data = createData(inputPath)
+                document.getStatementOrBundle().add(data)
+
+                // Current process (ProvONE: execution) used that file
+                document.getStatementOrBundle().add(pFactory.newUsed(processExe.id, data.id))
+            }
+
+            // The path could also be a directory
+            if (inputPath.isDirectory()) {
+                // Iterate over the directory content
+                File[] dirListing = inputPath.listFiles()
+                if (dirListing != null) {
+                    for (File child : dirListing) {
+                        Data data = createData(child)
+                        document.getStatementOrBundle().add(data)
+
+                        // Current process (ProvONE: execution) used that file
+                        document.getStatementOrBundle().add(pFactory.newUsed(processExe.id, data.id))
+                    }
+                }
             }
         }
 
@@ -359,13 +383,21 @@ class ProvOneObserver implements TraceObserver {
                 File[] dirListing = outputFile.listFiles()
                 if (dirListing != null) {
                     for (File child : dirListing) {
-                        document.getStatementOrBundle().add(createData(child))
+                        Data data = createData(child)
+                        document.getStatementOrBundle().add(data)
+
+                        // Current process (ProvONE: execution) generated that file
+                        document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(null, processExe.id, null, data.id))
                     }
                 }
             }
 
             if (outputFile.isFile()) {
-                document.getStatementOrBundle().add(createData(outputFile))
+                Data data = createData(outputFile)
+                document.getStatementOrBundle().add(data)
+
+                // Current process (ProvONE: execution) generated that file
+                document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(null, processExe.id, null, data.id))
             }
         }
 
