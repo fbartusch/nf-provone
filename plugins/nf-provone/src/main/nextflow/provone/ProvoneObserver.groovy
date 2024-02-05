@@ -43,6 +43,7 @@ import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
 import org.openprovenance.prov.interop.GenericInteropFramework
 import org.openprovenance.prov.model.QualifiedName
+import org.openprovenance.prov.model.Statement
 import org.openprovenance.prov.model.WasAssociatedWith
 import org.openprovenance.prov.model.WasInformedBy
 import org.provtools.provone.model.ProvOneNamespace
@@ -176,6 +177,10 @@ class ProvOneObserver implements TraceObserver {
                 pFactory.newQualifiedName("https://schema.org/", "Text", "schema")));
         Controller wfController = pFactory.newController(controllerQN, controllerAttrs)
         document.getStatementOrBundle().add(wfController)
+
+        // Controller controls the workflow ...
+        Statement wfms_controls_wf = pFactory.newControls(controllerQN, workflow.getId());
+        document.getStatementOrBundle().add(wfms_controls_wf)
     }
 
     /**
@@ -373,6 +378,7 @@ class ProvOneObserver implements TraceObserver {
             }
         }
 
+        //TODO In the test example, reflengths.bin two times present in the output
         // Output file(s) of the Execution
         Map<FileOutParam, Object> outputFiles = handler.getTask().getOutputsByType(FileOutParam.class)
         for (entry in outputFiles) {
@@ -387,7 +393,7 @@ class ProvOneObserver implements TraceObserver {
                         document.getStatementOrBundle().add(data)
 
                         // Current process (ProvONE: execution) generated that file
-                        document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(null, processExe.id, null, data.id))
+                        document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(data, null, processExe))
                     }
                 }
             }
@@ -395,9 +401,8 @@ class ProvOneObserver implements TraceObserver {
             if (outputFile.isFile()) {
                 Data data = createData(outputFile)
                 document.getStatementOrBundle().add(data)
-
                 // Current process (ProvONE: execution) generated that file
-                document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(null, processExe.id, null, data.id))
+                document.getStatementOrBundle().add(pFactory.newWasGeneratedBy(data, null, processExe))
             }
         }
 

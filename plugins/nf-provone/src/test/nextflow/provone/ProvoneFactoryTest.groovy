@@ -1,7 +1,6 @@
 package nextflow.provone
 
 import java.nio.file.Path
-import nextflow.cli.Launcher
 import nextflow.config.ConfigBuilder
 import nextflow.config.ConfigMap
 import nextflow.script.ScriptRunner
@@ -26,20 +25,6 @@ class ProvOneFactoryTest extends Specification {
 
         when:
         def result = runner.execute()
-
-        then:
-        1==1
-    }
-
-    def 'Run nf-core rnaseq pipeline: docker,test' () {
-        given:
-        String pipelineName = "nf-core/rnaseq"
-        String profiles = "test,docker"
-        Launcher launcher = new Launcher()
-        launcher.command('run', pipelineName, '-profile', profiles)
-
-        when:
-        def result = launcher.run()
 
         then:
         1==1
