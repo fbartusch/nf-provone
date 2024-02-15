@@ -334,9 +334,9 @@ class ProvOneObserver implements TraceObserver {
         WasPartOf exePartOfWF = pFactory.newWasPartOf(exeQN, workflowExecution.getId())
         document.getStatementOrBundle().add(exePartOfWF)
 
-        // Program is part of workflow
-        WasPartOf progPartOfWF = pFactory.newWasPartOf(progQN, workflow.getId())
-        document.getStatementOrBundle().add(progPartOfWF)
+        // Program is sub program of the workflow
+        Statement progSubProgOfWF = pFactory.newHasSubProgram(workflow.getId(), progQN)
+        document.getStatementOrBundle().add(progSubProgOfWF)
 
         //TODO there seems to be a directory present in the output?
         // -> Rework the data generation ...

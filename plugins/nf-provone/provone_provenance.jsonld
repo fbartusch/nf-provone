@@ -1,0 +1,93 @@
+{
+  "@context" : [ {
+    "schema" : "https://schema.org/",
+    "xsd" : "http://www.w3.org/2001/XMLSchema#",
+    "provone" : "http://purl.dataone.org/provone/2015/01/15/ontology#",
+    "dcterms" : "http://purl.org/dc/terms/",
+    "prov" : "http://www.w3.org/ns/prov#",
+    "foaf" : "http://xmlns.com/foaf/0.1/",
+    "exa" : "http://example.com/",
+    "scoro" : "http://purl.org/spar/scoro/"
+  }, "http://openprovenance.org/prov.jsonld" ],
+  "@graph" : [ {
+    "@type" : "provone:User",
+    "@id" : "exa:0000-0003-0711-5196",
+    "foaf:workplaceHomepage" : [ {
+      "@value" : ""
+    } ],
+    "foaf:title" : [ {
+      "@value" : "M.Sc."
+    } ],
+    "foaf:homepage" : [ {
+      "@value" : ""
+    } ],
+    "foaf:mbox" : [ {
+      "@value" : "felix.bartusch[at]uni-tuebingen.de"
+    } ],
+    "foaf:givenName" : [ {
+      "@value" : "Felix"
+    } ],
+    "foaf:familyName" : [ {
+      "@value" : "Bartusch"
+    } ],
+    "prov:label" : [ {
+      "@value" : "Felix Bartusch"
+    } ],
+    "scoro:hasORCID" : [ {
+      "@value" : "0000-0003-0711-5196"
+    } ]
+  }, {
+    "@type" : "provone:Workflow",
+    "@id" : "exa:94f87d9c6e50da96345c6a1644954425",
+    "prov:location" : [ {
+      "@value" : "/tmp/test13048851070580880976/main.nf",
+      "@type" : "prov:location"
+    } ],
+    "prov:label" : [ {
+      "@value" : "main.nf"
+    } ]
+  }, {
+    "@type" : "provone:Execution",
+    "@id" : "ex:2e293422-4076-4244-b6c7-12aa0155d30f",
+    "startTime" : "2024-02-15T07:05:50.631+01:00",
+    "endTime" : "2024-02-15T07:05:50.659+01:00",
+    "ex:workDir" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work"
+    } ],
+    "ex:projectDir" : [ {
+      "@value" : "/tmp/test13048851070580880976"
+    } ],
+    "ex:launchDir" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone"
+    } ],
+    "prov:label" : [ {
+      "@value" : "gloomy_wozniak"
+    } ]
+  }, {
+    "@type" : "prov:Association",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'exa:{{https://example.org/}}94f87d9c6e50da96345c6a1644954425'",
+    "activity" : "ex:2e293422-4076-4244-b6c7-12aa0155d30f",
+    "agent" : "exa:0000-0003-0711-5196",
+    "plan" : "exa:94f87d9c6e50da96345c6a1644954425"
+  }, {
+    "@type" : "provone:Controller",
+    "@id" : "ex:Nextflow",
+    "schema:softwareVersion" : [ {
+      "@value" : "23.04.0",
+      "@type" : "schema:Text"
+    } ],
+    "ex:timestamp" : [ {
+      "@value" : "01-04-2023 21:09 UTC"
+    } ],
+    "ex:build" : [ {
+      "@value" : "5857"
+    } ],
+    "prov:label" : [ {
+      "@value" : "Nextflow"
+    } ]
+  }, {
+    "@type" : "provone:Controls",
+    "provone:controller" : "ex:Nextflow",
+    "provone:program" : "exa:94f87d9c6e50da96345c6a1644954425"
+  } ]
+}
