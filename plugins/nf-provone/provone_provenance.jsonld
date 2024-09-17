@@ -38,9 +38,9 @@
     } ]
   }, {
     "@type" : "provone:Workflow",
-    "@id" : "exa:94f87d9c6e50da96345c6a1644954425",
+    "@id" : "exa:80f4c533789c5a76dff0605e198e65e2",
     "prov:location" : [ {
-      "@value" : "/tmp/test13048851070580880976/main.nf",
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/main.nf",
       "@type" : "prov:location"
     } ],
     "prov:label" : [ {
@@ -48,27 +48,27 @@
     } ]
   }, {
     "@type" : "provone:Execution",
-    "@id" : "ex:2e293422-4076-4244-b6c7-12aa0155d30f",
-    "startTime" : "2024-02-15T07:05:50.631+01:00",
-    "endTime" : "2024-02-15T07:05:50.659+01:00",
+    "@id" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f",
+    "startTime" : "2024-08-24T07:55:56.388+02:00",
+    "endTime" : "2024-08-24T07:56:03.381+02:00",
     "ex:workDir" : [ {
       "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work"
     } ],
     "ex:projectDir" : [ {
-      "@value" : "/tmp/test13048851070580880976"
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/src/testResources"
     } ],
     "ex:launchDir" : [ {
       "@value" : "/home/felix/github/nf-provone/plugins/nf-provone"
     } ],
     "prov:label" : [ {
-      "@value" : "gloomy_wozniak"
+      "@value" : "agitated_avogadro"
     } ]
   }, {
     "@type" : "prov:Association",
-    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'exa:{{https://example.org/}}94f87d9c6e50da96345c6a1644954425'",
-    "activity" : "ex:2e293422-4076-4244-b6c7-12aa0155d30f",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'exa:{{https://example.org/}}80f4c533789c5a76dff0605e198e65e2'",
+    "activity" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f",
     "agent" : "exa:0000-0003-0711-5196",
-    "plan" : "exa:94f87d9c6e50da96345c6a1644954425"
+    "plan" : "exa:80f4c533789c5a76dff0605e198e65e2"
   }, {
     "@type" : "provone:Controller",
     "@id" : "ex:Nextflow",
@@ -88,6 +88,616 @@
   }, {
     "@type" : "provone:Controls",
     "provone:controller" : "ex:Nextflow",
-    "provone:program" : "exa:94f87d9c6e50da96345c6a1644954425"
+    "provone:program" : "exa:80f4c533789c5a76dff0605e198e65e2"
+  }, {
+    "@type" : "provone:Execution",
+    "@id" : "ex:1792cad181b699c862c15deeb00bd217",
+    "startTime" : "2024-08-24T07:55:57.247+02:00",
+    "endTime" : "2024-08-24T07:55:58.105+02:00",
+    "prov:label" : [ {
+      "@value" : "INDEX"
+    } ]
+  }, {
+    "@type" : "provone:Program",
+    "@id" : "ex:-378936176",
+    "ex:script" : [ {
+      "@value" : "salmon index --threads 1 -t transcriptome.fa -i salmon_index"
+    } ],
+    "prov:label" : [ {
+      "@value" : "INDEX"
+    } ]
+  }, {
+    "@type" : "prov:Association",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'ex:{{https://example.com/}}1792cad181b699c862c15deeb00bd217'",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217",
+    "agent" : "exa:0000-0003-0711-5196",
+    "plan" : "ex:-378936176"
+  }, {
+    "@type" : "provone:WasPartOf",
+    "provone:child" : "ex:1792cad181b699c862c15deeb00bd217",
+    "provone:parent" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f"
+  }, {
+    "@type" : "provone:HasSubProgram",
+    "parent" : "exa:80f4c533789c5a76dff0605e198e65e2",
+    "child" : "ex:-378936176"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:23d667c_1314e1e",
+    "sha256" : "23d667cffc532a553044c8d2fe5f5d52e86d590b6669ae5aacd5c48e5530c284",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/transcriptome.fa"
+    } ]
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217",
+    "entity" : "ex:23d667c_1314e1e"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:9084b10_029b245",
+    "sha256" : "9084b10943dafd73a3518a04993951a7478cd5ec00c2e02bb066f641f709dd89",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/refAccumLengths.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:9084b10_029b245",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:e3f6905_a1abdea",
+    "sha256" : "e3f6905d3203db121629d50bbd33ca9b84d544447b8987650c4001de558b36b",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/complete_ref_lens.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:e3f6905_a1abdea",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:6fa36a5_545eaeb",
+    "sha256" : "6fa36a5f0a3082dc5112af4af724e7405f178b0e3c62541740275cc70a892664",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/ctg_offsets.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:6fa36a5_545eaeb",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:90c507c_4ebfd7b",
+    "sha256" : "90c507c50d6c6b9a9352fa50bfe2ee5723dce2cbbc89116ee5d69190678320c6",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/info.json"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:90c507c_4ebfd7b",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:e3f6905_86bdadb",
+    "sha256" : "e3f6905d3203db121629d50bbd33ca9b84d544447b8987650c4001de558b36b",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/reflengths.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:e3f6905_86bdadb",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:ebdbda8_ea58636",
+    "sha256" : "ebdbda828e47d831b9e41a40161cd382a01e1dd55832dd64f9877d22af8be863",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/ref_indexing.log"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:ebdbda8_ea58636",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:5f1a28f_2903940",
+    "sha256" : "5f1a28fe658e11a2369706eae2f49cfe2c110e9379b2c49feb3936df599029e4",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/refseq.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:5f1a28f_2903940",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:7f563eb_bde8ffd",
+    "sha256" : "7f563eb912e75fd65a8fbb660f2f26de09a1091fe6a6271f0009db0c5f287433",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/duplicate_clusters.tsv"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:7f563eb_bde8ffd",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:3030491_dedb9f7",
+    "sha256" : "3030491103a7991687f8119426e414c51aea9639bf6da61ae8a631dd435e94f9",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/mphf.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:3030491_dedb9f7",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:d4a0962_1865a81",
+    "sha256" : "d4a096297d6752e34380768a18e9aaece40ed4e5152b3307a7abed6b753368ce",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/rank.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:d4a0962_1865a81",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:1c7ea2b_d714c75",
+    "sha256" : "1c7ea2b66b9941c6bb5ba9c78e5bda001e098c76523faac6045d747559a48fe8",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/pos.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:1c7ea2b_d714c75",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:39e1a4a_634ca73",
+    "sha256" : "39e1a4a0fef1da72812c1fa163fc342c926f24571a8ee2f7ebc824d4ca8f07e3",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/versionInfo.json"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:39e1a4a_634ca73",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:1346fd8_4334f6c",
+    "sha256" : "1346fd8c96ec21cc902391ce4d4f4a221f0fd5dd24466e49dcb44c3baa102868",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/pre_indexing.log"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:1346fd8_4334f6c",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:2c73ce2_4082da7",
+    "sha256" : "2c73ce2af60fcc451fc5ca766c92a898cc3267d470e48c2106578d19cd665904",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/ctable.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:2c73ce2_4082da7",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:9cbfabe_43151c1",
+    "sha256" : "9cbfabe65198c0f0d4073c986395ec292f3a45bff51e29153cf1ed5ff6567add",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/eqtable.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:9cbfabe_43151c1",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:96c2012_c77ee70",
+    "sha256" : "96c20124743c0c44f7c134ba89d1c70b9499ef29564b1df3fc07d34b16aa4bc5",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/17/92cad181b699c862c15deeb00bd217/salmon_index/seq.bin"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:96c2012_c77ee70",
+    "activity" : "ex:1792cad181b699c862c15deeb00bd217"
+  }, {
+    "@type" : "provone:Execution",
+    "@id" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "startTime" : "2024-08-24T07:55:58.206+02:00",
+    "endTime" : "2024-08-24T07:55:58.966+02:00",
+    "prov:label" : [ {
+      "@value" : "QUANTIFICATION"
+    } ]
+  }, {
+    "@type" : "provone:Program",
+    "@id" : "ex:1247472875",
+    "ex:script" : [ {
+      "@value" : "salmon quant --threads 1 --libType=U -i salmon_index -1 gut_1.fq -2 gut_2.fq -o gut"
+    } ],
+    "prov:label" : [ {
+      "@value" : "QUANTIFICATION"
+    } ]
+  }, {
+    "@type" : "prov:Association",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'ex:{{https://example.com/}}65a8371b49aa46a310b27415529cf22b'",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "agent" : "exa:0000-0003-0711-5196",
+    "plan" : "ex:1247472875"
+  }, {
+    "@type" : "provone:WasPartOf",
+    "provone:child" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "provone:parent" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f"
+  }, {
+    "@type" : "provone:HasSubProgram",
+    "parent" : "exa:80f4c533789c5a76dff0605e198e65e2",
+    "child" : "ex:1247472875"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:9084b10_029b245"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:e3f6905_a1abdea"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:6fa36a5_545eaeb"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:90c507c_4ebfd7b"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:e3f6905_86bdadb"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:ebdbda8_ea58636"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:5f1a28f_2903940"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:7f563eb_bde8ffd"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:3030491_dedb9f7"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:d4a0962_1865a81"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:1c7ea2b_d714c75"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:39e1a4a_634ca73"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:1346fd8_4334f6c"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:2c73ce2_4082da7"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:9cbfabe_43151c1"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:96c2012_c77ee70"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:49e404b_67c45d0",
+    "sha256" : "49e404bd2adf9cd3bd82c542afa56aac60b1e8cdec7d2b7e2961eb42836a1428",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/src/testResources/data/ggal/gut_1.fq"
+    } ]
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b",
+    "entity" : "ex:49e404b_67c45d0"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:5026e85_673ef08",
+    "sha256" : "5026e8534eece566358cc949606b89ededf87f44940b7c471b8791f0e19af101",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/observed_bias.gz"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:5026e85_673ef08",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:ae19452_46f8372",
+    "sha256" : "ae19452a5d780dedc3a5b8c31f336f6aab162b6c1919c2625d3247df12e70f77",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/fld.gz"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:ae19452_46f8372",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:fcdb9d1_84f9d43",
+    "sha256" : "fcdb9d1bedb2532533467692f8f62127e3df5c0d8e2cb464913b2436b464e099",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/ambig_info.tsv"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:fcdb9d1_84f9d43",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:6d65839_2cbd8ac",
+    "sha256" : "6d65839bc53bb77b1591a72674407c5a012fb16dfa2a95d173b68c7eb7ecca0f",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/meta_info.json"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:6d65839_2cbd8ac",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:5026e85_556974a",
+    "sha256" : "5026e8534eece566358cc949606b89ededf87f44940b7c471b8791f0e19af101",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/observed_bias_3p.gz"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:5026e85_556974a",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:4fd777a_3d674fb",
+    "sha256" : "4fd777aa7f863a78c072a2b8f2aefac9ed9d6d6de332113fbe1adcb9632c7181",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/aux_info/expected_bias.gz"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:4fd777a_3d674fb",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:4d3ee73_f913e51",
+    "sha256" : "4d3ee73ee46f5667f6e228010ba9ce0a27a584f2f8b4b2e237da22c009755576",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/cmd_info.json"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:4d3ee73_f913e51",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:f1c78b0_5d78cb3",
+    "sha256" : "f1c78b0cc0e06df107ab598e91fcddc3a4633d5bbec87fce4ffa560b042059f0",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/lib_format_counts.json"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:f1c78b0_5d78cb3",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:fa084e7_c0619dc",
+    "sha256" : "fa084e79d9d69578ee8697dd008fdc143beef51b27c0e57c459ba3e086b8ed16",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/quant.sf"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:fa084e7_c0619dc",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:2d644c4_39709a0",
+    "sha256" : "2d644c43ffdfe58eec0deec54d0b2b924d918274bd43d900b835d6baa66a203e",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/logs/salmon_quant.log"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:2d644c4_39709a0",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:e9b09fd_21e85d8",
+    "sha256" : "e9b09fd1e064f6ae640f1f99a658d4723b18bcf55bba652e2211284cacad5f51",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/65/a8371b49aa46a310b27415529cf22b/gut/libParams/flenDist.txt"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:e9b09fd_21e85d8",
+    "activity" : "ex:65a8371b49aa46a310b27415529cf22b"
+  }, {
+    "@type" : "provone:Execution",
+    "@id" : "ex:c4733f06856bab8307fd5447a7f6a128",
+    "startTime" : "2024-08-24T07:55:57.248+02:00",
+    "endTime" : "2024-08-24T07:56:00.990+02:00",
+    "prov:label" : [ {
+      "@value" : "FASTQC"
+    } ]
+  }, {
+    "@type" : "provone:Program",
+    "@id" : "ex:-293564460",
+    "ex:script" : [ {
+      "@value" : "mkdir fastqc_gut_logs\n    fastqc -o fastqc_gut_logs -f fastq -q gut_1.fq gut_2.fq"
+    } ],
+    "prov:label" : [ {
+      "@value" : "FASTQC"
+    } ]
+  }, {
+    "@type" : "prov:Association",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'ex:{{https://example.com/}}c4733f06856bab8307fd5447a7f6a128'",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128",
+    "agent" : "exa:0000-0003-0711-5196",
+    "plan" : "ex:-293564460"
+  }, {
+    "@type" : "provone:WasPartOf",
+    "provone:child" : "ex:c4733f06856bab8307fd5447a7f6a128",
+    "provone:parent" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f"
+  }, {
+    "@type" : "provone:HasSubProgram",
+    "parent" : "exa:80f4c533789c5a76dff0605e198e65e2",
+    "child" : "ex:-293564460"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128",
+    "entity" : "ex:49e404b_67c45d0"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:e53b202_88d356a",
+    "sha256" : "e53b20255b09e3001da7bfe30b9a603c068728d8fb384b522b297c71e7bd7757",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/c4/733f06856bab8307fd5447a7f6a128/fastqc_gut_logs/gut_2_fastqc.html"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:e53b202_88d356a",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:959ac96_393b4ec",
+    "sha256" : "959ac9688abee6d282ba26d9364c12cce020ae509649cad9313bbd467b39d327",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/c4/733f06856bab8307fd5447a7f6a128/fastqc_gut_logs/gut_1_fastqc.zip"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:959ac96_393b4ec",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:7e97d1d_8d5665d",
+    "sha256" : "7e97d1df9d6101d8261bf26ddd89418414462b2c1509ab649721864169bdc4ce",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/c4/733f06856bab8307fd5447a7f6a128/fastqc_gut_logs/gut_2_fastqc.zip"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:7e97d1d_8d5665d",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:d1c5f94_76eeccc",
+    "sha256" : "d1c5f940a6d43a9d1fe6c67e3c63f4dd9646c3f9c041f091eb7f6d36ce166119",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/c4/733f06856bab8307fd5447a7f6a128/fastqc_gut_logs/gut_1_fastqc.html"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:d1c5f94_76eeccc",
+    "activity" : "ex:c4733f06856bab8307fd5447a7f6a128"
+  }, {
+    "@type" : "provone:Execution",
+    "@id" : "ex:e75127903128407b4c393f1dde7eca04",
+    "startTime" : "2024-08-24T07:56:01.090+02:00",
+    "endTime" : "2024-08-24T07:56:03.370+02:00",
+    "prov:label" : [ {
+      "@value" : "MULTIQC"
+    } ]
+  }, {
+    "@type" : "provone:Program",
+    "@id" : "ex:-1107855909",
+    "ex:script" : [ {
+      "@value" : "multiqc ."
+    } ],
+    "prov:label" : [ {
+      "@value" : "MULTIQC"
+    } ]
+  }, {
+    "@type" : "prov:Association",
+    "@id" : "ex:'exa:{{https://example.com/}}0000-0003-0711-5196'_'ex:{{https://example.com/}}e75127903128407b4c393f1dde7eca04'",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "agent" : "exa:0000-0003-0711-5196",
+    "plan" : "ex:-1107855909"
+  }, {
+    "@type" : "provone:WasPartOf",
+    "provone:child" : "ex:e75127903128407b4c393f1dde7eca04",
+    "provone:parent" : "ex:2daf15b9-f3b2-46ed-99e1-598163f55d4f"
+  }, {
+    "@type" : "provone:HasSubProgram",
+    "parent" : "exa:80f4c533789c5a76dff0605e198e65e2",
+    "child" : "ex:-1107855909"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:5026e85_673ef08"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:ae19452_46f8372"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:fcdb9d1_84f9d43"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:6d65839_2cbd8ac"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:5026e85_556974a"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:4fd777a_3d674fb"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:4d3ee73_f913e51"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:f1c78b0_5d78cb3"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:fa084e7_c0619dc"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:2d644c4_39709a0"
+  }, {
+    "@type" : "prov:Usage",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04",
+    "entity" : "ex:e9b09fd_21e85d8"
+  }, {
+    "@type" : "provone:Data",
+    "@id" : "ex:fe320c5_e05a4d5",
+    "sha256" : "fe320c55a90326dc7fdebd37ade301014334d5a8c7eb55fbcf3d0c739df2a31c",
+    "prov:label" : [ {
+      "@value" : "/home/felix/github/nf-provone/plugins/nf-provone/work/e7/5127903128407b4c393f1dde7eca04/multiqc_report.html"
+    } ]
+  }, {
+    "@type" : "prov:Generation",
+    "entity" : "ex:fe320c5_e05a4d5",
+    "activity" : "ex:e75127903128407b4c393f1dde7eca04"
   } ]
 }

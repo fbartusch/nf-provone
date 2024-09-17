@@ -22,22 +22,17 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneId
-import nextflow.config.ConfigMap
 import nextflow.file.FileHolder
 import nextflow.processor.TaskHandler
 import nextflow.processor.TaskProcessor
 
 import nextflow.Session
-import nextflow.processor.TaskRun
-import nextflow.script.BodyDef
-import nextflow.script.ProcessConfig
 import nextflow.script.params.FileInParam
 import nextflow.script.params.FileOutParam
-import nextflow.script.params.InParam
-import nextflow.script.params.OutParam
 import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
 import nextflow.util.ArrayBag
+import org.apache.jena.rdf.model.Model
 import org.openprovenance.prov.model.Attribute
 import org.openprovenance.prov.model.Document
 import org.openprovenance.prov.interop.InteropFramework
@@ -45,7 +40,7 @@ import org.openprovenance.prov.interop.GenericInteropFramework
 import org.openprovenance.prov.model.QualifiedName
 import org.openprovenance.prov.model.Statement
 import org.openprovenance.prov.model.WasAssociatedWith
-import org.openprovenance.prov.model.WasInformedBy
+import org.openprovenance.prov.interop.ApacheJenaInterop
 import org.provtools.provone.model.ProvOneNamespace
 import org.provtools.provone.model.WasPartOf
 import org.provtools.provone.vanilla.Controller
@@ -57,6 +52,8 @@ import org.provtools.provone.vanilla.ProvOneFactory
 import java.nio.file.Path
 import org.provtools.provone.vanilla.User
 import org.provtools.provone.vanilla.Workflow
+
+import org.apache.jena.rdfconnection.RDFConnection
 
 /**
  * Workflow events observer that creates
@@ -70,14 +67,22 @@ class ProvOneObserver implements TraceObserver {
 
     Session sessionSave = null
 
-    ProvOneFactory pFactory = new ProvOneFactory();
-    ProvOneNamespace ns = new ProvOneNamespace();
+    ProvOneFactory pFactory = new ProvOneFactory()
+    ProvOneNamespace ns = new ProvOneNamespace()
     Document document = pFactory.newDocument()
 
     // PROV and ProvONE elements
     Workflow workflow = null
     Execution workflowExecution = null
     User user = null
+
+    // Result provenance file
+    String provenanceFile
+
+    // Fuseki connection details
+    String fusekiURL
+    String fusekiUser
+    String fusekiPasword
 
     //TODO In the test example, reflengths.bin two times present in the output
     // Need to keep track for which file we already added as Data element to the document.
@@ -89,48 +94,60 @@ class ProvOneObserver implements TraceObserver {
      */
     @Override
     void onFlowCreate(Session session) {
-        log.info "onFlowCreate called."
-        log.info(session.config.toString());
-        log.info(session.dump());
+        // How id debug mode set?
+        log.debug "onFlowCreate called."
+        log.debug(session.config.toString())
+        log.debug(session.dump())
 
         sessionSave = session
 
-        log.info "\tSet namespaces ..."
-
         // Configure namespaces used in the document
-        this.ns.addKnownNamespaces();
-        this.ns.register("exa", "http://example.com/");
-        this.ns.register("dcterms", "http://purl.org/dc/terms/");
-        this.ns.register("schema", "https://schema.org/");
-        this.ns.register("foaf", "http://xmlns.com/foaf/0.1/");
-        this.ns.register("scoro", "http://purl.org/spar/scoro/");
+        log.debug "\tSet namespaces ..."
+        this.ns.addKnownNamespaces()
+        this.ns.register("exa", "http://example.com/")
+        this.ns.register("dcterms", "http://purl.org/dc/terms/")
+        this.ns.register("schema", "https://schema.org/")
+        this.ns.register("foaf", "http://xmlns.com/foaf/0.1/")
+        this.ns.register("scoro", "http://purl.org/spar/scoro/")
         document.setNamespace(ns)
 
-        // Read user information file
-        String userINIPath = null
-        if(session.config.containsKey("provone")) {
-            ConfigMap provoneConfig = session.config["provone"]
-            if(provoneConfig.containsKey("userINI")) {
-                userINIPath = Path.of((String) provoneConfig["userINI"]);
-
-                // Resolve $projectDir
-                if(userINIPath.startsWith('$projectDir')) {
-                    userINIPath = userINIPath.replace('$projectDir', session.getWorkflowMetadata().getProjectDir().toString())
-                }
-            }
-        }
-        // Use default path in user's home
-        if(userINIPath == null)
-            userINIPath = session.workflowMetadata.homeDir.toString() + "/.provone/user.ini";
-
-        // Create ProvOne user element
-        Path p = Path.of(userINIPath);
-        if(p.exists() && !p.isDirectory()) {
-            user = pFactory.newUser(p, "https://example.com/", "exa")
+        // Parse agent information
+        log.debug "\tParse configuration ..."
+        final provoneParams = session.config.provone as Map
+        if (provoneParams.containsKey("agent")) {
+            Map agentMap = provoneParams["agent"] as Map
+            String title = agentMap.containsKey("title") ? agentMap.get("title") : null
+            String givenName = agentMap.containsKey("givenName") ? agentMap.get("givenName") : null
+            String familyName = agentMap.containsKey("familyName") ? agentMap.get("familyName") : null
+            String mbox = agentMap.containsKey("mbox") ? agentMap.get("mbox") : null
+            String orcid = agentMap.containsKey("orcid") ? agentMap.get("orcid") : null
+            String label = givenName + " " + familyName
+            QualifiedName userQN = pFactory.newQualifiedName("http://example.com/", orcid, "exa")
+            user = pFactory.newUser(userQN, label, title, givenName, familyName, mbox, null, null, orcid)
             document.getStatementOrBundle().add(user)
         } else {
-            log.info("User INI file does not exist: " + userINIPath)
+            log.debug "Parse agent information: No information found!"
         }
+
+        // Parse Fuseki information
+        if (provoneParams.containsKey("fuseki")) {
+            Map fusekiMap = provoneParams["fuseki"] as Map
+            this.fusekiURL = fusekiMap.containsKey("url") ? fusekiMap.get("url") : null
+            this.fusekiUser = fusekiMap.containsKey("user") ? fusekiMap.get("user") : null
+            this.fusekiPasword = fusekiMap.containsKey("password") ? fusekiMap.get("password") : null
+
+            // Everything has to be defined
+            if (! (fusekiURL && fusekiUser && fusekiPasword)) {
+                log.debug "Fuseki: at least one of url, user, password is not defined"
+            }
+
+            //TODO Check here if Fuseki talks with us
+        } else {
+            log.debug "Parse Fuseki information: No information found!"
+        }
+
+        // Parse provenance file name
+        this.provenanceFile = provoneParams.containsKey("file") ? provoneParams.get("file") : "provone_provenance.jsonld"
 
         // Create a new ProvOne workflow object and add it to the document
         workflow = pFactory.newWorkflow(session.workflowMetadata.getScriptId(),
@@ -138,53 +155,53 @@ class ProvOneObserver implements TraceObserver {
                     session.workflowMetadata.getScriptFile().toString(),
                     session.workflowMetadata.getRepository(),
                     session.workflowMetadata.getCommitId(),
-                    session.workflowMetadata.getRevision());
+                    session.workflowMetadata.getRevision())
         document.getStatementOrBundle().add(workflow)
 
         // Execution metadata
-        QualifiedName exeQN = pFactory.newQualifiedName("https://example.com/", session.workflowMetadata.getSessionId().toString(), "ex");
-        Collection<Attribute> wfAttrs = new LinkedList<>();
+        QualifiedName exeQN = pFactory.newQualifiedName("http://example.com/", session.workflowMetadata.getSessionId().toString(), "ex")
+        Collection<Attribute> wfAttrs = new LinkedList<>()
         // Add projectDir as attribute
-        wfAttrs.add(pFactory.newAttribute("https://example.com/", "projectDir", "ex",
-                session.workflowMetadata.getProjectDir(), pFactory.getName().XSD_STRING));
+        wfAttrs.add(pFactory.newAttribute("http://example.com/", "projectDir", "ex",
+                session.workflowMetadata.getProjectDir(), pFactory.getName().XSD_STRING))
         // Add launchDir as attribute
-        wfAttrs.add(pFactory.newAttribute("https://example.com/", "launchDir", "ex",
-                session.workflowMetadata.getLaunchDir(), pFactory.getName().XSD_STRING));
+        wfAttrs.add(pFactory.newAttribute("http://example.com/", "launchDir", "ex",
+                session.workflowMetadata.getLaunchDir(), pFactory.getName().XSD_STRING))
         // Add workDir as attribute
-        wfAttrs.add(pFactory.newAttribute("https://example.com/", "workDir", "ex",
-                session.workflowMetadata.getWorkDir(), pFactory.getName().XSD_STRING));
+        wfAttrs.add(pFactory.newAttribute("http://example.com/", "workDir", "ex",
+                session.workflowMetadata.getWorkDir(), pFactory.getName().XSD_STRING))
         // Add label
         wfAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
                 pFactory.newInternationalizedString(session.workflowMetadata.getRunName()),
-                pFactory.getName().XSD_STRING));
+                pFactory.getName().XSD_STRING))
 
-        workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, wfAttrs);
+        workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, wfAttrs)
         document.getStatementOrBundle().add(workflowExecution)
 
         // Associate user with workflow execution and plan (e.g. the Nextflow script)
-        QualifiedName userWFAssocQN = pFactory.newQualifiedName("https://example.com/",
-                user.getId().toString() + "_" + workflow.getId().toString(), "ex");
-        WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(userWFAssocQN, workflowExecution.getId(), user.getId(), workflow.getId(), null);
+        QualifiedName userWFAssocQN = pFactory.newQualifiedName("http://example.com/",
+                user.getId().toString() + "_" + workflow.getId().toString(), "ex")
+        WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(userWFAssocQN, workflowExecution.getId(), user.getId(), workflow.getId(), null)
         document.getStatementOrBundle().add(userWFAssoc)
 
         // Create Controller Provone Element
-        QualifiedName controllerQN = pFactory.newQualifiedName("https://example.com/", "Nextflow", "ex");
-        Collection<Attribute> controllerAttrs = new LinkedList<>();
+        QualifiedName controllerQN = pFactory.newQualifiedName("http://example.com/", "Nextflow", "ex")
+        Collection<Attribute> controllerAttrs = new LinkedList<>()
         controllerAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL, pFactory.newInternationalizedString("Nextflow"),
-                pFactory.getName().XSD_STRING));
+                pFactory.getName().XSD_STRING))
         // Add Build and timestamp as attribute
-        controllerAttrs.add(pFactory.newAttribute("https://example.com/", "build", "ex",
-                session.workflowMetadata.getNextflow().getBuild().toString(), pFactory.getName().XSD_STRING));
-        controllerAttrs.add(pFactory.newAttribute("https://example.com/", "timestamp", "ex",
-                session.workflowMetadata.getNextflow().getTimestamp(), pFactory.getName().XSD_STRING));
+        controllerAttrs.add(pFactory.newAttribute("http://example.com/", "build", "ex",
+                session.workflowMetadata.getNextflow().getBuild().toString(), pFactory.getName().XSD_STRING))
+        controllerAttrs.add(pFactory.newAttribute("http://example.com/", "timestamp", "ex",
+                session.workflowMetadata.getNextflow().getTimestamp(), pFactory.getName().XSD_STRING))
         controllerAttrs.add(pFactory.newAttribute("https://schema.org/", "softwareVersion", "schema",
                 session.workflowMetadata.getNextflow().getVersion().toString(),
-                pFactory.newQualifiedName("https://schema.org/", "Text", "schema")));
+                pFactory.newQualifiedName("https://schema.org/", "Text", "schema")))
         Controller wfController = pFactory.newController(controllerQN, controllerAttrs)
         document.getStatementOrBundle().add(wfController)
 
         // Controller controls the workflow ...
-        Statement wfms_controls_wf = pFactory.newControls(controllerQN, workflow.getId());
+        Statement wfms_controls_wf = pFactory.newControls(controllerQN, workflow.getId())
         document.getStatementOrBundle().add(wfms_controls_wf)
     }
 
@@ -207,10 +224,19 @@ class ProvOneObserver implements TraceObserver {
         // Set Workflow endTime
         workflowExecution.setEndTime(sessionSave.getWorkflowMetadata().getComplete())
 
-        String filename = "provone_provenance.jsonld";
-        InteropFramework intF = new GenericInteropFramework(this.pFactory);
+        // Write provenance file
+        InteropFramework intF = new GenericInteropFramework(this.pFactory)
+        intF.writeDocument(this.provenanceFile, document)
 
-        intF.writeDocument(filename, document);     
+        ApacheJenaInterop converter = new ApacheJenaInterop(this.pFactory)
+        Model m = converter.createJenaModel(document)
+
+        // Upload provenance to server
+        try ( RDFConnection conn = RDFConnection.connectPW(fusekiURL, fusekiUser, fusekiPasword) ) {
+            conn.load(m)
+        } catch(Exception e) {
+            log.error(e.toString())
+        }
     }
 
     /*
@@ -219,12 +245,11 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessCreate( TaskProcessor process ){
         log.info "onProcessCreate called"
-        log.info(process.dump());
+        log.debug(process.dump())
 
         // Process has a name (e.g. "INDEX")
         process.getName()
         process.getId()
-
     }
 
     /*
@@ -233,13 +258,13 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessTerminate( TaskProcessor process ){
         log.info "onProcessTerminate called"
-        log.info(process.dump());
+        log.debug(process.dump())
 
         // Process Environment has zero size ...
-        Map<String, String> processEnvironment = process.getProcessEnvironment()
+        //Map<String, String> processEnvironment = process.getProcessEnvironment()
 
-        ProcessConfig processConfig = process.getConfig()
-        BodyDef taskBody = process.getTaskBody()
+        //ProcessConfig processConfig = process.getConfig()
+        //BodyDef taskBody = process.getTaskBody()
 
         process.getId()
     }
@@ -255,8 +280,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessPending(TaskHandler handler, TraceRecord trace){
         log.info "onProcessPending called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
     }
 
     /**
@@ -270,8 +295,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessSubmit(TaskHandler handler, TraceRecord trace){
         log.info "onProcessSubmit called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
     }
 
     /**
@@ -285,8 +310,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessStart(TaskHandler handler, TraceRecord trace){
         log.info "onProcessStart called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
     }
 
     /**
@@ -300,34 +325,34 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessComplete(TaskHandler handler, TraceRecord trace){
         log.info "onProcessComplete called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
 
         // Execution
-        QualifiedName exeQN = pFactory.newQualifiedName("https://example.com/", handler.getTask().getHash().toString(), "ex")
-        OffsetDateTime startTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getStartTimeMillis()), ZoneId.systemDefault());
-        OffsetDateTime endTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getCompleteTimeMillis()), ZoneId.systemDefault());
+        QualifiedName exeQN = pFactory.newQualifiedName("http://example.com/", handler.getTask().getHash().toString(), "ex")
+        OffsetDateTime startTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getStartTimeMillis()), ZoneId.systemDefault())
+        OffsetDateTime endTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(handler.getCompleteTimeMillis()), ZoneId.systemDefault())
         Execution processExe = pFactory.newExecution(exeQN, startTime, endTime, handler.getTask().getProcessor().getName())
         document.getStatementOrBundle().add(processExe)
 
         // Program
         // The qualified name will be computed from the executed script. There is no hash for the script itself.
-        QualifiedName progQN = pFactory.newQualifiedName("https://example.com/", handler.getTask().getScript().hashCode().toString(), "ex")
+        QualifiedName progQN = pFactory.newQualifiedName("http://example.com/", handler.getTask().getScript().hashCode().toString(), "ex")
         // Attributes
-        Collection<Attribute> progAttrs = new LinkedList<>();
+        Collection<Attribute> progAttrs = new LinkedList<>()
         progAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
                 pFactory.newInternationalizedString(handler.getTask().getProcessor().getName()),
-                pFactory.getName().XSD_STRING));
+                pFactory.getName().XSD_STRING))
         // Add script as attribute
-        progAttrs.add(pFactory.newAttribute("https://example.com/", "script", "ex",
-                handler.getTask().getScript().toString().trim(), pFactory.getName().XSD_STRING));
+        progAttrs.add(pFactory.newAttribute("http://example.com/", "script", "ex",
+                handler.getTask().getScript().toString().trim(), pFactory.getName().XSD_STRING))
         Program processProg = pFactory.newProgram(progQN, progAttrs)
         document.getStatementOrBundle().add(processProg)
 
         // Associate Execution with the Program and User
-        QualifiedName userProcAssocQN = pFactory.newQualifiedName("https://example.com/",
-                user.getId().toString() + "_" + processExe.getId().toString(), "ex");
-        WasAssociatedWith userProcessAssoc = pFactory.newWasAssociatedWith(userProcAssocQN, processExe.getId(), user.getId(), processProg.getId(), null);
+        QualifiedName userProcAssocQN = pFactory.newQualifiedName("http://example.com/",
+                user.getId().toString() + "_" + processExe.getId().toString(), "ex")
+        WasAssociatedWith userProcessAssoc = pFactory.newWasAssociatedWith(userProcAssocQN, processExe.getId(), user.getId(), processProg.getId(), null)
         document.getStatementOrBundle().add(userProcessAssoc)
 
         // Process execution is part of workflow execution
@@ -345,7 +370,7 @@ class ProvOneObserver implements TraceObserver {
         // TODO If possible, move this to onProcessStart or somewhere else where we can see the input files
         //  Otherwise output files could be listed as input files, if there are output files in input directories after
         //  the process finished
-        List<Path> inputFilesList = new LinkedList<Path>();
+        List<Path> inputFilesList = new LinkedList<Path>()
         Map<FileInParam, Object> fileInParams = handler.getTask().getInputsByType(FileInParam.class)
         for (entry in fileInParams) {
 
@@ -437,7 +462,7 @@ class ProvOneObserver implements TraceObserver {
         }*/
 
         // Compile a list of all output files
-        List<Path> outputFilesList = new LinkedList<Path>();
+        List<Path> outputFilesList = new LinkedList<Path>()
         Map<FileOutParam, Object> fileOutParams = handler.getTask().getOutputsByType(FileOutParam.class)
         for (entry in fileOutParams) {
             File fileOutParam = new File(entry.value.toString())
@@ -473,9 +498,9 @@ class ProvOneObserver implements TraceObserver {
 
 
     private static List<Path> listOfFiles(Path dirPath) {
-        List<Path> result = new ArrayList<Path>();
+        List<Path> result = new ArrayList<Path>()
 
-        Path[] filesList = dirPath.listFiles();
+        Path[] filesList = dirPath.listFiles()
         for(Path file : filesList) {
             if(file.isFile()) {
                 result.add(file)
@@ -500,8 +525,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onProcessCached(TaskHandler handler, TraceRecord trace){
         log.info "onProcessCached called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
     }
 
     /**
@@ -521,8 +546,8 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onFlowError(TaskHandler handler, TraceRecord trace){
         log.info "onFlowError called"
-        log.info(handler.dump());
-        log.info(trace.dump());
+        log.debug(handler.dump())
+        log.debug(trace.dump())
     }
 
     /**
@@ -535,7 +560,7 @@ class ProvOneObserver implements TraceObserver {
     @Override
     void onFilePublish(Path destination){
         log.info "onFilePublish called"
-        log.info(Path.dump());
+        log.debug(Path.dump())
     }
 
     /**
@@ -564,7 +589,7 @@ class ProvOneObserver implements TraceObserver {
         def digest = MessageDigest.getInstance(type)
         def inputstream = file.newInputStream()
         def buffer = new byte[16384]
-        def int len
+        int len
 
         while((len=inputstream.read(buffer)) > 0) {
             digest.update(buffer, 0, len)
@@ -589,9 +614,7 @@ class ProvOneObserver implements TraceObserver {
     private Data createData(File file)  {
         // Compute hash sum of the file
         //String checksum = getSha1sum(file)
-        //QualifiedName outputQN = pFactory.newQualifiedName("https://example.com/", checksum, "ex");
-        return pFactory.newData(Path.of(file.toString()), "https://example.com/", "ex")
+        //QualifiedName outputQN = pFactory.newQualifiedName("http://example.com/", checksum, "ex");
+        return pFactory.newData(Path.of(file.toString()), "http://example.com/", "ex")
     }
-
-
 }
