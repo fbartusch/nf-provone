@@ -104,7 +104,7 @@ class ProvOneObserver implements TraceObserver {
         // Configure namespaces used in the document
         log.debug "\tSet namespaces ..."
         this.ns.addKnownNamespaces()
-        this.ns.register("exa", "http://example.com/")
+        this.ns.register("ex", "http://example.com/")
         this.ns.register("dcterms", "http://purl.org/dc/terms/")
         this.ns.register("schema", "https://schema.org/")
         this.ns.register("foaf", "http://xmlns.com/foaf/0.1/")
@@ -122,7 +122,7 @@ class ProvOneObserver implements TraceObserver {
             String mbox = agentMap.containsKey("mbox") ? agentMap.get("mbox") : null
             String orcid = agentMap.containsKey("orcid") ? agentMap.get("orcid") : null
             String label = givenName + " " + familyName
-            QualifiedName userQN = pFactory.newQualifiedName("http://example.com/", orcid, "exa")
+            QualifiedName userQN = pFactory.newQualifiedName("http://example.com/", orcid, "ex")
             user = pFactory.newUser(userQN, label, title, givenName, familyName, mbox, null, null, orcid)
             document.getStatementOrBundle().add(user)
         } else {
@@ -180,7 +180,7 @@ class ProvOneObserver implements TraceObserver {
 
         // Associate user with workflow execution and plan (e.g. the Nextflow script)
         QualifiedName userWFAssocQN = pFactory.newQualifiedName("http://example.com/",
-                user.getId().toString() + "_" + workflow.getId().toString(), "ex")
+                user.getId().getLocalPart() + "_" + workflow.getId().getLocalPart(), "ex")
         WasAssociatedWith userWFAssoc = pFactory.newWasAssociatedWith(userWFAssocQN, workflowExecution.getId(), user.getId(), workflow.getId(), null)
         document.getStatementOrBundle().add(userWFAssoc)
 
@@ -351,7 +351,7 @@ class ProvOneObserver implements TraceObserver {
 
         // Associate Execution with the Program and User
         QualifiedName userProcAssocQN = pFactory.newQualifiedName("http://example.com/",
-                user.getId().toString() + "_" + processExe.getId().toString(), "ex")
+                user.getId().getLocalPart() + "_" + processExe.getId().getLocalPart(), "ex")
         WasAssociatedWith userProcessAssoc = pFactory.newWasAssociatedWith(userProcAssocQN, processExe.getId(), user.getId(), processProg.getId(), null)
         document.getStatementOrBundle().add(userProcessAssoc)
 
