@@ -33,10 +33,10 @@ import nextflow.trace.TraceObserver
 import nextflow.trace.TraceRecord
 import nextflow.util.ArrayBag
 import org.apache.jena.rdf.model.Model
+import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.riot.RDFFormat
 import org.openprovenance.prov.model.Attribute
 import org.openprovenance.prov.model.Document
-import org.openprovenance.prov.interop.InteropFramework
-import org.openprovenance.prov.interop.GenericInteropFramework
 import org.openprovenance.prov.model.QualifiedName
 import org.openprovenance.prov.model.Statement
 import org.openprovenance.prov.model.WasAssociatedWith
@@ -80,6 +80,7 @@ class ProvOneObserver implements TraceObserver {
     String provenanceFile
 
     // Fuseki connection details
+    boolean fusekiUpload = false
     String fusekiURL
     String fusekiUser
     String fusekiPasword
@@ -112,6 +113,7 @@ class ProvOneObserver implements TraceObserver {
         document.setNamespace(ns)
 
         // Parse agent information
+        // TODO check for empty config
         log.debug "\tParse configuration ..."
         final provoneParams = session.config.provone as Map
         if (provoneParams.containsKey("agent")) {
@@ -132,18 +134,20 @@ class ProvOneObserver implements TraceObserver {
         // Parse Fuseki information
         if (provoneParams.containsKey("fuseki")) {
             Map fusekiMap = provoneParams["fuseki"] as Map
-            this.fusekiURL = fusekiMap.containsKey("url") ? fusekiMap.get("url") : null
-            this.fusekiUser = fusekiMap.containsKey("user") ? fusekiMap.get("user") : null
-            this.fusekiPasword = fusekiMap.containsKey("password") ? fusekiMap.get("password") : null
+            this.fusekiUpload = fusekiMap.containsKey("upload") ? fusekiMap.get("url") : null
 
-            // Everything has to be defined
-            if (! (fusekiURL && fusekiUser && fusekiPasword)) {
-                log.debug "Fuseki: at least one of url, user, password is not defined"
+            if (fusekiUpload) {
+                this.fusekiURL = fusekiMap.containsKey("url") ? fusekiMap.get("url") : null
+                this.fusekiUser = fusekiMap.containsKey("user") ? fusekiMap.get("user") : null
+                this.fusekiPasword = fusekiMap.containsKey("password") ? fusekiMap.get("password") : null
+
+                // Everything has to be defined
+                if (!(fusekiURL && fusekiUser && fusekiPasword)) {
+                    log.debug "Fuseki: at least one of url, user, password is not defined"
+                }
+
+                //TODO Check if fuseki talks with us.
             }
-
-            //TODO Check here if Fuseki talks with us
-        } else {
-            log.debug "Parse Fuseki information: No information found!"
         }
 
         // Parse provenance file name
@@ -225,17 +229,30 @@ class ProvOneObserver implements TraceObserver {
         workflowExecution.setEndTime(sessionSave.getWorkflowMetadata().getComplete())
 
         // Write provenance file
-        InteropFramework intF = new GenericInteropFramework(this.pFactory)
-        intF.writeDocument(this.provenanceFile, document)
+        //InteropFramework intF = new GenericInteropFramework(this.pFactory)
+        //intF.writeDocument(this.provenanceFile, document)
 
+        // Create Jena model
         ApacheJenaInterop converter = new ApacheJenaInterop(this.pFactory)
         Model m = converter.createJenaModel(document)
 
+        // Write model to file
+        try (OutputStream out = new FileOutputStream(this.provenanceFile)) {
+            // Write the model in Turtle format using RDFDataMgr
+            RDFDataMgr.write(out, m, RDFFormat.TURTLE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // Upload provenance to server
-        try ( RDFConnection conn = RDFConnection.connectPW(fusekiURL, fusekiUser, fusekiPasword) ) {
-            conn.load(m)
-        } catch(Exception e) {
-            log.error(e.toString())
+        // Store the provenance of each execution in it's own graph with the it's execution ID in the graph's name
+        String graphName = "http://example/trace_" + sessionSave.workflowMetadata.getSessionId().toString()
+        if(fusekiUpload) {
+            try ( RDFConnection conn = RDFConnection.connectPW(fusekiURL, fusekiUser, fusekiPasword) ) {
+                conn.load(graphName, m)
+            } catch(Exception e) {
+                log.error(e.toString())
+            }
         }
     }
 
@@ -370,6 +387,11 @@ class ProvOneObserver implements TraceObserver {
         // TODO If possible, move this to onProcessStart or somewhere else where we can see the input files
         //  Otherwise output files could be listed as input files, if there are output files in input directories after
         //  the process finished
+
+        // TODO throws java.lang.IndexOutOfBoundsException: Index 0 out of bounds for length 0
+        //  [...]
+        //  at nextflow.provone.ProvOneObserver.onProcessComplete(ProvoneObserver.groovy:398)
+        //	at nextflow.Session.notifyTaskComplete(Session.groovy:1047)
         List<Path> inputFilesList = new LinkedList<Path>()
         Map<FileInParam, Object> fileInParams = handler.getTask().getInputsByType(FileInParam.class)
         for (entry in fileInParams) {
