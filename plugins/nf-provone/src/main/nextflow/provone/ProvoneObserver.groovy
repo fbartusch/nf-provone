@@ -110,6 +110,7 @@ class ProvOneObserver implements TraceObserver {
         this.ns.register("schema", "https://schema.org/")
         this.ns.register("foaf", "http://xmlns.com/foaf/0.1/")
         this.ns.register("scoro", "http://purl.org/spar/scoro/")
+        this.ns.register("github", "https://github.com/")
         document.setNamespace(ns)
 
         // Parse agent information
@@ -151,35 +152,116 @@ class ProvOneObserver implements TraceObserver {
         }
 
         // Parse provenance file name
-        this.provenanceFile = provoneParams.containsKey("file") ? provoneParams.get("file") : "provone_provenance.jsonld"
+        this.provenanceFile = provoneParams.containsKey("file") ? provoneParams.get("file") : "provone_provenance.ttl"
+
+        // Workflow
+
+        // TODO Add license information
+        // - Check for a file LICENSE: this is in workflow directory for nf-core pipelines
+
+        // TODO Check information stored in nextflow.config under manifest.
+        // - demo pipeline example:
+        // manifest {
+        //    name            = 'nf-core/demo'
+        //    author          = """Christopher Hakkaart"""
+        //    homePage        = 'https://github.com/nf-core/demo'
+        //    description     = """An nf-core demo pipeline"""
+        //    mainScript      = 'main.nf'
+        //    nextflowVersion = '!>=23.04.0'
+        //    version         = '1.0.0'
+        //    doi             = ''
+        //}
+
+        // TODO Add reliable metadata about the workflow
+        // TODO Are there other information sources if there is no manifest?
+        // Label should be the pipeline name, e.g. nf-core/demo
+        String wfLabel = null
+        // A human readable description of the workflow
+        String wfDescription = null
+        // Workflow author
+        String wfAuthor = null
+        // Location of the main workflow file (e.g. main.nf for Nextflow)
+        String wfLocation = null
+        // Repository information and pipeline version
+        String wfRepo = null
+        String wfCommitID = null
+        String wfRevision = null
+        String wfVersion = null
+        // Nextflow dependency information
+        String wfNextflowVersion = null
+        String wfDOI = null
+
+        final wfManifest = session.config.manifest as Map
+        System.out.println("Manifest: " + wfManifest.toString())
+        System.out.println("\nDescprition:\n" + wfManifest.get("description"))
+        if (wfManifest) {
+            wfLabel  = wfManifest.containsKey("name") ? wfManifest.get("name") : null
+            wfDescription  = wfManifest.containsKey("description") ? wfManifest.get("description") : null
+            wfAuthor  = wfManifest.containsKey("author") ? wfManifest.get("author") : null
+            wfLocation  = session.workflowMetadata.getScriptFile().toString()
+            wfRepo  = wfManifest.containsKey("homePage") ? wfManifest.get("homePage") : null
+            // For nf-core workflows the version should be also a tag in the pipeline repo
+            wfRevision = wfManifest.containsKey("version") ? wfManifest.get("version") : null
+            wfVersion = wfManifest.containsKey("version") ? wfManifest.get("version") : null
+            wfNextflowVersion = wfManifest.containsKey("nextflowVersion") ? wfManifest.get("nextflowVersion") : null
+            System.out.println("label: " + wfLabel)
+
+        }
+
+        // TODO Add additional attributes
+        Collection<Attribute> wfAttrs = new LinkedList<>()
+        if(wfDescription) {
+            wfAttrs.add(pFactory.newAttribute("http://example.com/", "description", "ex",
+                    wfDescription, pFactory.getName().XSD_STRING))
+        }
+        if(wfAuthor) {
+            wfAttrs.add(pFactory.newAttribute("http://example.com/", "author", "ex",
+                    wfAuthor, pFactory.getName().XSD_STRING))
+        }
+        if(wfRepo) {
+            wfAttrs.add(pFactory.newAttribute("http://example.com/", "repository", "ex",
+                    wfRepo, pFactory.getName().XSD_STRING))
+        }
+        if(wfRevision) {
+            wfAttrs.add(pFactory.newAttribute("http://example.com/", "revision", "ex",
+                    wfRevision, pFactory.getName().XSD_STRING))
+        }
+        if(wfNextflowVersion) {
+            wfAttrs.add(pFactory.newAttribute("http://example.com/", "nextflowVersion", "ex",
+                    wfNextflowVersion, pFactory.getName().XSD_STRING))
+        }
+
+        // TODO Add GitHub namespace if workflow has a GitHub repo. -> workflow URI can be accessed.
+        // If there repository and revision information this should be unambiguous
+        String wfQNLocalName = ""
+        if (wfRepo && wfRevision) {
+            wfQNLocalName= wfRepo + "-" + wfVersion
+        } else {
+            wfQNLocalName = session.workflowMetadata.getScriptId()
+        }
 
         // Create a new ProvOne workflow object and add it to the document
-        workflow = pFactory.newWorkflow(session.workflowMetadata.getScriptId(),
-                    session.workflowMetadata.getScriptName(),
-                    session.workflowMetadata.getScriptFile().toString(),
-                    session.workflowMetadata.getRepository(),
-                    session.workflowMetadata.getCommitId(),
-                    session.workflowMetadata.getRevision())
+        workflow = pFactory.newWorkflow(wfQNLocalName, wfLabel, wfLocation, wfRepo, null, wfRevision)
+        workflow.attributes.addAll(wfAttrs)
         document.getStatementOrBundle().add(workflow)
 
-        // Execution metadata
+        // Execution
         QualifiedName exeQN = pFactory.newQualifiedName("http://example.com/", session.workflowMetadata.getSessionId().toString(), "ex")
-        Collection<Attribute> wfAttrs = new LinkedList<>()
+        Collection<Attribute> exeAttrs = new LinkedList<>()
         // Add projectDir as attribute
-        wfAttrs.add(pFactory.newAttribute("http://example.com/", "projectDir", "ex",
+        exeAttrs.add(pFactory.newAttribute("http://example.com/", "projectDir", "ex",
                 session.workflowMetadata.getProjectDir(), pFactory.getName().XSD_STRING))
         // Add launchDir as attribute
-        wfAttrs.add(pFactory.newAttribute("http://example.com/", "launchDir", "ex",
+        exeAttrs.add(pFactory.newAttribute("http://example.com/", "launchDir", "ex",
                 session.workflowMetadata.getLaunchDir(), pFactory.getName().XSD_STRING))
         // Add workDir as attribute
-        wfAttrs.add(pFactory.newAttribute("http://example.com/", "workDir", "ex",
+        exeAttrs.add(pFactory.newAttribute("http://example.com/", "workDir", "ex",
                 session.workflowMetadata.getWorkDir(), pFactory.getName().XSD_STRING))
         // Add label
-        wfAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
+        exeAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL,
                 pFactory.newInternationalizedString(session.workflowMetadata.getRunName()),
                 pFactory.getName().XSD_STRING))
-
-        workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, wfAttrs)
+        workflowExecution = pFactory.newExecution(exeQN, session.workflowMetadata.getStart(), null, exeAttrs)
         document.getStatementOrBundle().add(workflowExecution)
 
         // Associate user with workflow execution and plan (e.g. the Nextflow script)
@@ -189,17 +271,34 @@ class ProvOneObserver implements TraceObserver {
         document.getStatementOrBundle().add(userWFAssoc)
 
         // Create Controller Provone Element
-        QualifiedName controllerQN = pFactory.newQualifiedName("http://example.com/", "Nextflow", "ex")
+        // TODO Check if session.workflowMetadata.getNextflow() preview and enable contains more interesting properties
+        //System.out.println(session.workflowMetadata.getNextflow().toString())
+        // nextflow.NextflowMeta(version:24.04.4,
+        //                       build:5917, timestamp:01-08-2024 07:05 UTC,
+        //                       preview:nextflow.NextflowMeta$Preview@2d9de284,
+        //                       enable:nextflow.NextflowMeta$Features@4b5798c2,
+        //                       dsl2:true,
+        //                       strictModeEnabled:false)#
+        String nxfVersion = session.workflowMetadata.getNextflow().getVersion()
+        String nxfBuild = session.workflowMetadata.getNextflow().getBuild()
+        String nxfTimestamp = session.workflowMetadata.getNextflow().getTimestamp()
+        boolean nxfIsDSL2 = session.workflowMetadata.getNextflow().isDsl2()
+        String nxfDSL = nxfIsDSL2 ? "2" : "1"
+
+        String qnLocal = "nextflow-" + nxfVersion
+        QualifiedName controllerQN = pFactory.newQualifiedName("http://example.com/", qnLocal, "ex")
         Collection<Attribute> controllerAttrs = new LinkedList<>()
         controllerAttrs.add(pFactory.newAttribute(Attribute.AttributeKind.PROV_LABEL, pFactory.newInternationalizedString("Nextflow"),
                 pFactory.getName().XSD_STRING))
         // Add Build and timestamp as attribute
         controllerAttrs.add(pFactory.newAttribute("http://example.com/", "build", "ex",
-                session.workflowMetadata.getNextflow().getBuild().toString(), pFactory.getName().XSD_STRING))
+                nxfBuild, pFactory.getName().XSD_STRING))
         controllerAttrs.add(pFactory.newAttribute("http://example.com/", "timestamp", "ex",
-                session.workflowMetadata.getNextflow().getTimestamp(), pFactory.getName().XSD_STRING))
+                nxfTimestamp, pFactory.getName().XSD_STRING))
+        controllerAttrs.add(pFactory.newAttribute("http://example.com/", "dsl", "ex",
+                nxfDSL, pFactory.getName().XSD_STRING))
         controllerAttrs.add(pFactory.newAttribute("https://schema.org/", "softwareVersion", "schema",
-                session.workflowMetadata.getNextflow().getVersion().toString(),
+                nxfVersion.toString(),
                 pFactory.newQualifiedName("https://schema.org/", "Text", "schema")))
         Controller wfController = pFactory.newController(controllerQN, controllerAttrs)
         document.getStatementOrBundle().add(wfController)
